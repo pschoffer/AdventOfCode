@@ -5,17 +5,23 @@ use std::path::Path;
 fn main() {
     if let Ok(lines) = read_lines("./input.txt") {
         // Consumes the iterator, returns an (Optional) String
+        let mut prevprev = -1;
         let mut prev = -1;
+        let mut sumprev = -1;
         let mut counter = 0;
         for line in lines {
             if let Ok(depth) = line {
                 let current = depth.parse::<i32>().unwrap();
-                if prev >= 0 {
-                    println!("{} - {}", depth, prev);
-                    if current > prev {
-                        counter += 1;
+                if prevprev >= 0 {
+                    let sum = current + prev + prevprev;
+                    if sumprev >= 0 {
+                        if sum > sumprev {
+                            counter += 1;
+                        }
                     }
+                    sumprev = sum;
                 }
+                prevprev = prev;
                 prev = current;
             }
         }
