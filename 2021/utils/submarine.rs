@@ -1,9 +1,9 @@
 pub struct Submarine {
-    ip: u32
-    instructions: Vec<Instruction>
+    ip: u32,
+    instructions: Vec<Instruction>,
 
-    position: i32
-    depth: i32
+    position: i32,
+    depth: i32,
 }
 
 impl Submarine {
@@ -19,6 +19,6 @@ impl Submarine {
 }
 
 pub struct Instruction {
-    opcode: String
-    arguments: Vec<String>
+    opcode: String,
+    arguments: Vec<String>,
 }
