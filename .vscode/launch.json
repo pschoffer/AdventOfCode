@@ -5,7 +5,7 @@
             "type": "lldb",
             "name": "Rust",
             "request": "launch",
-            "program": "advent",
+            "program": "${relativeFileDirname}/../advent",
             "cwd": "${relativeFileDirname}/.."
         }
     ]
