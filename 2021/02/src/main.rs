@@ -8,4 +8,6 @@ fn main() {
     println!("Got lines {}, e.g. \"{}\"", lines.len(), lines[0]);
 
     let sub = submarine::Submarine::new();
+    sub.load_instructions(lines);
+    println!("{}", sub);
 }
