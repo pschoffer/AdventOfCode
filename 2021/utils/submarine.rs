@@ -40,14 +40,15 @@ impl Submarine {
             "forward" => {
                 let steps = inst.arguments[0].parse::<i32>().unwrap();
                 self.position += steps;
+                self.depth += self.aim * steps;
             }
             "down" => {
                 let steps = inst.arguments[0].parse::<i32>().unwrap();
-                self.depth += steps;
+                self.aim += steps;
             }
             "up" => {
                 let steps = inst.arguments[0].parse::<i32>().unwrap();
-                self.depth -= steps;
+                self.aim -= steps;
             }
             _ => println!("UNKOWN code"),
         }
