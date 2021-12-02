@@ -6,6 +6,7 @@ pub struct Submarine {
 
     pub position: i32,
     pub depth: i32,
+    pub aim: i32,
 }
 
 impl Submarine {
@@ -16,6 +17,7 @@ impl Submarine {
 
             position: 0,
             depth: 0,
+            aim: 0,
         }
     }
 
@@ -65,9 +67,10 @@ impl fmt::Display for Submarine {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Submarine: depth={} position={}; instr[{}] -> {}",
+            "Submarine: depth={} position={} aim={}; instr[{}] -> {}",
             self.depth,
             self.position,
+            self.aim,
             self.ip,
             self.instructions.len()
         )
