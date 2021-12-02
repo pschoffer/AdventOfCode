@@ -13,7 +13,7 @@ cat > "src/main.rs" << EOF
 mod parser;
 
 fn main() {
-    let lines = parser::parse_lines("2".to_string());
+    let lines = parser::parse_lines("1".to_string());
     println!("Got lines {}, e.g. \"{}\"", lines.len(), lines[0]);
 }
 EOF
