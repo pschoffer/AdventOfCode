@@ -1,3 +1,12 @@
+pub fn to_dec_from_string(binary: &String) -> u32 {
+    let proper: Vec<u8> = binary
+        .chars()
+        .map(|character| if character == '1' { 1 } else { 0 })
+        .collect();
+
+    return to_dec(proper);
+}
+
 pub fn to_dec(binary: Vec<u8>) -> u32 {
     let mut multiplier = 1;
     let mut result = 0;
