@@ -55,14 +55,18 @@ impl Game {
     }
 
     pub fn run(&mut self) {
-        while self.numbers.len() > 0 && self.winner_ix.is_none() {
+        // while self.numbers.len() > 0 && self.winner_ix.is_none() {
+        while self.numbers.len() > 0 {
             let current_number = self.numbers.remove(0);
 
             for board_ix in 0..self.boards.len() {
-                self.boards[board_ix].mark(current_number);
-                if self.boards[board_ix].is_finished {
-                    self.winner_ix = Some(board_ix);
-                    self.winner_number = Some(current_number);
+                if !self.boards[board_ix].is_finished {
+                    self.boards[board_ix].mark(current_number);
+
+                    if self.boards[board_ix].is_finished {
+                        self.winner_ix = Some(board_ix);
+                        self.winner_number = Some(current_number);
+                    }
                 }
             }
         }
