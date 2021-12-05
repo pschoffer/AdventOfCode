@@ -46,10 +46,6 @@ fn parse(lines: Vec<String>) -> Vec<Vent> {
             .map(|x| point::Point::parse(x.to_owned()))
             .collect();
 
-        if point::dimention_diff_count(&coordinates[0], &coordinates[1]) > 1 {
-            continue;
-        }
-
         let line = point::line(&coordinates[0], &coordinates[1]);
         let new_vent = Vent::new(ix, line);
         vents.push(new_vent);
