@@ -10,7 +10,7 @@ fn main() {
 
     let mut fishes = FishColony::parse(&lines[0]);
 
-    for _day in 0..80 {
+    for _day in 0..256 {
         fishes.age();
         println!("Doing day {}", _day);
     }
