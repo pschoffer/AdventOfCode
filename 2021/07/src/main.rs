@@ -78,9 +78,20 @@ fn count_fuel(crabs: &HashMap<usize, usize>, target: usize) -> usize {
             } else {
                 target - *key
             };
-            cost += distance * crab_count;
+            cost += count_fuel_for_distance(distance) * crab_count;
         }
     }
 
+    return cost;
+}
+
+fn count_fuel_for_distance(distance: usize) -> usize {
+    let mut current_distance = distance;
+    let mut cost = 0;
+    while current_distance > 0 {
+        cost += current_distance;
+
+        current_distance -= 1;
+    }
     return cost;
 }
