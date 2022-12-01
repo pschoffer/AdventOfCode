@@ -5,8 +5,13 @@ const inputTestPath = path.join(__dirname, 'test1.txt');
 const run = async () => {
     const input = parsePath(inputPath);
 
+    input.sort((a, b) => b.sum - a.sum);
+
     const calories = input.map(i => i.sum);
-    console.log(Math.max(...calories));
+
+    console.log(calories);
+    const result = calories[0] + calories[1] + calories[2];
+    console.log(result);
 }
 
 const parsePath = (inputPath: string) => {
@@ -35,6 +40,7 @@ const parsePath = (inputPath: string) => {
         }
 
     }
+    elfs.push(currentElf);
 
 
     return elfs;
