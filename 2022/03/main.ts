@@ -1,3 +1,5 @@
+import { group } from "../lib/math";
+
 const path = require('path');
 const inputPath = path.join(__dirname, 'input.txt');
 const inputTestPath = path.join(__dirname, 'test1.txt');
@@ -8,12 +10,22 @@ const run = async () => {
     // const input = parseInput(inputTestPath);
     const input = parseInput(inputPath);
 
-    let inBoth: string[] = []
-    for (const rugsag of input) {
-        inBoth.push(...[...rugsag.inBoth]);
+    const badges = input.map(findBadge).map(getPriority);
+
+    console.log('badges', math.sum(badges));
+
+}
+
+const findBadge = (group: Group): string => {
+    const firstRugsag = group.rugsags[0];
+
+    for (const item of firstRugsag.items) {
+        if (group.rugsags.every(r => r.items.has(item))) {
+            return item;
+        }
     }
-    const prios = inBoth.map(getPriority);
-    console.log('inBoth', math.sum(prios));
+
+    throw Error('notFound')
 }
 
 const getPriority = (item: string) => {
@@ -27,42 +39,35 @@ const getPriority = (item: string) => {
 
 }
 
-interface Compartment {
-    itemSet: Set<string>
+interface Group {
+    rugsags: Rugsag[];
 }
 
 
 interface Rugsag {
-    compartments: [Compartment, Compartment]
-    inBoth: Set<string>
+    items: Set<string>
 }
 
 const parseInput = (inputPath: string) => {
     const fs = require('fs');
     const data = fs.readFileSync(inputPath, 'utf8');
-    const lines = data.split("\n");
+    const lines = data.split("\n") as string[];
 
-    const result: Rugsag[] = [];
+    const result: Group[] = [];
 
-    for (const line of lines) {
-        const chars = line.split("");
-        const compartments: [Compartment, Compartment] = [{ itemSet: new Set() }, { itemSet: new Set() }];
-        const inBoth = new Set<string>();
+    const groupedLines = group(lines, 3);
+    for (const groupedLine of groupedLines) {
+        const rugsags: Rugsag[] = []
+        for (const line of groupedLine) {
+            const chars = line.split("");
 
-        compartments[0].itemSet = new Set(chars.slice(0, chars.length / 2));
-        for (const item of chars.slice(chars.length / 2)) {
-            compartments[1].itemSet.add(item);
-            if (compartments[0].itemSet.has(item)) {
-                inBoth.add(item);
-            }
-
+            rugsags.push({
+                items: new Set(chars),
+            });
         }
-
-        result.push({
-            compartments,
-            inBoth
-        });
+        result.push({ rugsags })
     }
+
 
     return result;
 }
