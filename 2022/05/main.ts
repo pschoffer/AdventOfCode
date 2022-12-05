@@ -15,8 +15,14 @@ const processShip = (ship: Ship) => {
     for (const instruction of ship.instructions) {
         const fromStack = ship.stacks[instruction.from - 1];
         const toStack = ship.stacks[instruction.to - 1];
-        const element = fromStack.pop();
-        toStack.push(element || '');
+        const tmpStack: string[] = [];
+
+        for (let counter = 0; counter < instruction.count; counter++) {
+            tmpStack.push(fromStack.pop() || '');
+        }
+        for (let counter = 0; counter < instruction.count; counter++) {
+            toStack.push(tmpStack.pop() || '');
+        }
     }
 }
 
@@ -40,12 +46,11 @@ const parseInput = (inputPath: string): Ship => {
         if (breakIx) {
             const matchResult = line.match(/move (.+) from (.+) to (.+)/);
             const count = Number(matchResult[1]);
-            for (let counter = 0; counter < count; counter++) {
-                result.instructions.push({
-                    from: Number(matchResult[2]),
-                    to: Number(matchResult[3])
-                })
-            }
+            result.instructions.push({
+                from: Number(matchResult[2]),
+                to: Number(matchResult[3]),
+                count
+            })
         }
     }
 
@@ -70,6 +75,7 @@ const parseInput = (inputPath: string): Ship => {
 interface Instruction {
     from: number
     to: number
+    count: number
 }
 
 interface Ship {
