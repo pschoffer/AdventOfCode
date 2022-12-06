@@ -12,10 +12,12 @@ const run = async () => {
     console.log(result + 1)
 }
 
-const findPatern = (input: string) => {
-    const pastChars = input.slice(0, 3).split('');
+const LENGHT = 14;
 
-    for (let ix = 3; ix < input.length; ix++) {
+const findPatern = (input: string) => {
+    const pastChars = input.slice(0, LENGHT - 1).split('');
+
+    for (let ix = LENGHT - 1; ix < input.length; ix++) {
         const pastCharsInvalid = pastChars.length > new Set(pastChars).size;
 
         const element = input[ix];
