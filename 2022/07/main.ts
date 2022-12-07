@@ -2,28 +2,42 @@ const path = require('path');
 const inputPath = path.join(__dirname, 'input.txt');
 const inputTestPath = path.join(__dirname, 'test1.txt');
 
+const TOTAL_SPACE = 70000000;
+const REQUIRED_SPACE = 30000000;
+
 const run = async () => {
     // const input = parseInput(inputTestPath);
     const input = parseInput(inputPath);
     calculateSize(input);
-    console.log(sumSize(input, 100000))
+
+    const currentSpace = TOTAL_SPACE - (input!.size || 0);
+    const spaceToFree = REQUIRED_SPACE - currentSpace;
+
+    const final = findSmallestFolder(input, spaceToFree);
+    console.log(final && final.size)
+
 }
 
-const sumSize = (folder: Folder, limit: number) => {
-    let size = 0;
+const findSmallestFolder = (folder: Folder, limit: number): Folder | null => {
+    let result: Folder | null = null;
     for (const subFolderName in folder.subFolders) {
         const subFolder = folder.subFolders[subFolderName];
-        size += sumSize(subFolder, limit);
+        const candidate = findSmallestFolder(subFolder, limit);
+        if (candidate && (!result || (candidate.size || 0) < (result.size || 0))) {
+            result = candidate;
+        }
     }
 
-
-    if (folder.size && folder.size <= limit) {
-        size += folder.size;
+    if (result) {
+        return result;
     }
 
-
-    return size;
+    if (folder.size && folder.size >= limit) {
+        return folder;
+    }
+    return null;
 }
+
 
 const calculateSize = (folder: Folder) => {
     if (folder.size !== null) {
