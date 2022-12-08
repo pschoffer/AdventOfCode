@@ -7,87 +7,86 @@ const inputTestPath = path.join(__dirname, 'test1.txt');
 const run = async () => {
     const input = parseInput(inputPath);
     // const input = parseInput(inputTestPath);
-
-    const visibilityMap = calculateVisibilityMaps(input);
-    const count = countVisible(input, visibilityMap);
-    console.log(count)
-}
-
-function countVisible(input: number[][], visibilityMap: VisibilityMap) {
-    let count = 0;
-    for (let y = 0; y < input.length; y++) {
-        for (let x = 0; x < input[y].length; x++) {
-            const height = input[y][x];
-            if (isVisible(y, x, height, visibilityMap)) {
-                count++;
-            }
-        }
-    }
-    return count;
-}
-
-function isVisible(y: number, x: number, height: number, visibilityMap: VisibilityMap) {
-    for (const direction of ['top', 'bottom', 'left', 'right'] as Direction[]) {
-        if (visibilityMap[direction][y][x] < height) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-const calculateVisibilityMaps = (input: number[][]): VisibilityMap => {
-    return {
-        top: calculateVisibilityMap(input, 'top'),
-        bottom: calculateVisibilityMap(input, 'bottom'),
-        left: calculateVisibilityMap(input, 'left'),
-        right: calculateVisibilityMap(input, 'right'),
-    }
-}
-
-const calculateVisibilityMap = (input: number[][], direction: Direction): number[][] => {
-    const result: number[][] = [];
-    for (let i = 0; i < input.length; i++) {
-        const row = input[i];
-        result.push([]);
-        for (let j = 0; j < row.length; j++) {
-            result[i].push(0);
-        }
-    }
-
-    let startY = direction === 'bottom' ? result.length - 1 : 0;
-    let startX = direction === 'right' ? result[0].length - 1 : 0;
-    const adjustY = direction === 'bottom' ? -1 : 1;
-    const adjustX = direction === 'right' ? -1 : 1;
+    let maxScore = 0;
+    const blockers: BlockerMap = { cols: {}, rows: {} };
     const edge = [input.length - 1, input[0].length - 1];
 
-    if (direction === 'left' || direction === 'right') {
-        for (let y = startY; y >= 0 && y < result.length; y += adjustY) {
-            for (let x = startX; x >= 0 && x < result[y].length; x += adjustX) {
-                const prevX = x - adjustX;
-                if (isInBounds([y, prevX], edge)) {
-                    result[y][x] += Math.max(result[y][prevX], input[y][prevX]);
-                } else {
-                    result[y][x] = -1;
-                }
+    for (let height = 9; height > 1; height--) {
+        const candidates = findCandidatesAndAddToBlockers(input, height, blockers);
+        console.log('testing height', height, 'candidates', candidates.length, 'prev max', maxScore);
+        for (const candidate of candidates) {
+            const score = calculateScore(blockers, candidate, edge);
+            if (score > maxScore) {
+                maxScore = score;
             }
         }
-    } else {
-        for (let x = startX; x >= 0 && x < result[0].length; x += adjustX) {
-            for (let y = startY; y >= 0 && y < result.length; y += adjustY) {
-                const prevY = y - adjustY;
-                if (isInBounds([prevY, x], edge)) {
-                    result[y][x] += Math.max(result[prevY][x], input[prevY][x]);
-                } else {
-                    result[y][x] = -1;
-                }
-            }
+
+    }
+
+
+    console.log(maxScore);
+}
+
+const calculateScore = (blockers: BlockerMap, test: number[], edge: number[]): number => {
+    let score = 1;
+
+    for (const direction of ['top', 'bottom', 'left', 'right'] as Direction[]) {
+        let distance = calculateDistance(blockers, test, direction, edge);
+        score *= distance;
+        if (score === 0) {
+            break;
         }
     }
 
 
-    return result;
+    return score;
 }
+
+const calculateDistance = (blockers: BlockerMap, test: number[], direction: Direction, edge: number[]): number => {
+
+
+    if (direction === 'left' || direction === 'right') {
+        const row = blockers.rows[test[0]] || [];
+        const adjust = direction === 'left' ? -1 : 1;
+        const ix = row.indexOf(test[1]);
+        const blockerIx = ix + adjust;
+        if (blockerIx < 0 || blockerIx >= row.length) {
+            return direction === 'left' ? test[1] : edge[1] - test[1];
+        } else {
+            return Math.abs(row[blockerIx] - test[1]);
+        }
+    } else {
+        const col = blockers.cols[test[1]] || [];
+        const adjust = direction === 'top' ? -1 : 1;
+
+        const ix = col.indexOf(test[0]);
+        const blockerIx = ix + adjust;
+        if (blockerIx < 0 || blockerIx >= col.length) {
+            return direction === 'top' ? test[0] : edge[0] - test[0];
+        } else {
+            return Math.abs(col[blockerIx] - test[0]);
+        }
+    }
+}
+
+function findCandidatesAndAddToBlockers(input: number[][], height: number, blockers: BlockerMap): number[][] {
+    const candidates: number[][] = [];
+    for (let y = 0; y < input.length; y++) {
+        for (let x = 0; x < input[y].length; x++) {
+            const element = input[y][x];
+            if (element === height) {
+                candidates.push([y, x]);
+                blockers.rows[y] = (blockers.rows[y] || []).concat([x]);
+                blockers.cols[x] = (blockers.cols[x] || []).concat([y]);
+                blockers.rows[y].sort((a, b) => a - b);
+                blockers.cols[x].sort((a, b) => a - b);
+            }
+        }
+    }
+    return candidates;
+}
+
+
 
 const parseInput = (inputPath: string): number[][] => {
     const fs = require('fs');
@@ -105,8 +104,13 @@ const parseInput = (inputPath: string): number[][] => {
 
 type Direction = 'top' | 'bottom' | 'left' | 'right';
 
-type VisibilityMap = Record<Direction, number[][]>;
+interface BlockerMap {
+    rows: Record<number, number[]>
+    cols: Record<number, number[]>
+}
+
 
 run();
+
 
 
