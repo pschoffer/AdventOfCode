@@ -6,13 +6,26 @@ const run = async () => {
     const input = parseInput(inputPath);
     // const input = parseInput(inputTestPath);
 
-    const strength = processForStrenth(input);
+    const screen = processForStrenth(input);
 
-    console.log(strength)
+    for (const line of screen) {
+        console.log(line.join(''))
+    }
 }
 
-function processForStrenth(instructions: Instraction[]): number {
-    let strength = 0;
+const SCREEN_HEIGHT = 6;
+const SCREEN_WIDTH = 40;
+
+const getScreenIndex = (cycle: number): number[] => {
+    const rowIx = Math.floor((cycle - 1) / SCREEN_WIDTH) % SCREEN_HEIGHT;
+    const colIx = (cycle - 1) % SCREEN_WIDTH;
+
+    return [rowIx, colIx];
+
+}
+
+function processForStrenth(instructions: Instraction[]): string[][] {
+    const screen = new Array(SCREEN_HEIGHT).fill(0).map(() => new Array(SCREEN_WIDTH).fill('.'));
 
     let cycle = 0;
     let currentInstructionCycle = 0;
@@ -22,13 +35,11 @@ function processForStrenth(instructions: Instraction[]): number {
         cycle++;
         currentInstructionCycle++;
 
+        const [rowIx, colIx] = getScreenIndex(cycle);
 
-
-        if (cycle === 20 || ((cycle - 20) % 40 === 0)) {
-            const thisStrength = cycle * registry;
-            strength += thisStrength
+        if ([registry - 1, registry, registry + 1].includes(colIx)) {
+            screen[rowIx][colIx] = '#';
         }
-
 
         const instruction = instructions[instructionPointer];
         if (currentInstructionCycle >= instructionCycles[instruction.code]) {
@@ -46,7 +57,7 @@ function processForStrenth(instructions: Instraction[]): number {
     }
 
 
-    return strength;
+    return screen;
 }
 
 const instructionCycles: Record<InstructionCode, number> = {
