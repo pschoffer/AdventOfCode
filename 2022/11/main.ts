@@ -4,10 +4,10 @@ const path = require('path');
 const inputPath = path.join(__dirname, 'input.txt');
 const inputTestPath = path.join(__dirname, 'test1.txt');
 
-const ROUNDS = 1000;
+const ROUNDS = 10000;
 const run = async () => {
-    // const input = parseInput(inputPath);
-    const input = parseInput(inputTestPath);
+    const input = parseInput(inputPath);
+    // const input = parseInput(inputTestPath);
 
     const activity = simulate(input, ROUNDS);
     activity.sort((a, b) => b - a);
@@ -15,11 +15,15 @@ const run = async () => {
     console.log(activity[0] * activity[1])
 }
 
+const getState = (monkeys: Monkey[]): string => {
+    return monkeys.map(m => m.items.map(item => item.id).join(',')).join('|');
+}
 
 const simulate = (monkeys: Monkey[], rounds: number): number[] => {
     const result = new Array(monkeys.length).fill(0);
     let prevResult = new Array(monkeys.length).fill(0);
-    let prevValue = 1n
+    const multiplier = monkeys.map(monkey => monkey.test).reduce((a, b) => a * b);
+
     for (let i = 0; i < rounds; i++) {
         for (let monkeyIx = 0; monkeyIx < monkeys.length; monkeyIx++) {
             const monkey = monkeys[monkeyIx];
@@ -27,16 +31,8 @@ const simulate = (monkeys: Monkey[], rounds: number): number[] => {
             while (monkey.items.length) {
                 const item = monkey.items.shift()!;
 
-                // if (item.id === 0 && monkeyIx === 0) {
-                //     const division = item.value / prevValue;
-                //     if (division > 19n) {
-                //         console.log(`Round ${i + 1}, Monkey ${monkeyIx}`, item.value, item.value / prevValue);
-                //     }
-                //     prevValue = BigInt(item.value);
-                // }
-
-                item.value = monkey.adjustment(item.value);
-                const testResult = monkey.test(item.value);
+                item.value = monkey.adjustment(item.value) % multiplier;
+                const testResult = item.value % monkey.test === 0n;
 
                 const newMonkeyIx = testResult ? monkey.resultTrue : monkey.resultFalse;
                 monkeys[newMonkeyIx].items.push(item);
@@ -44,13 +40,12 @@ const simulate = (monkeys: Monkey[], rounds: number): number[] => {
                 result[monkeyIx]++;
             }
         }
-
-        // if ((i + 1) % 20 === 0) {
-        //     const diff = result.map((r, ix) => r - prevResult[ix]);
-        //     prevResult = [...result];
-        //     console.log("Round ", i + 1, 'done', result, diff);
-        //     console.log()
-        // }
+        if ((i + 1) % 100 === 0) {
+            const diff = result.map((r, ix) => r - prevResult[ix]);
+            prevResult = [...result];
+            console.log("Round ", i + 1, 'done', result, diff);
+            console.log()
+        }
     }
 
     return result;
@@ -81,7 +76,7 @@ const parseMonkey = (lines: string[]): Monkey => {
         return a + b;
     }
     const divisibilityMatch = lines[3].match(/divisible by (\d+)/) || [];
-    const test = (a: bigint) => a % BigInt(divisibilityMatch[1]) === 0n;
+    const test = BigInt(divisibilityMatch[1]);
     const resultTrue = Number(lines[4].split(' ')[9]);
     const resultFalse = Number(lines[5].split(' ')[9]);
 
@@ -104,7 +99,7 @@ interface Monkey {
     id: number;
     items: Item[];
     adjustment: (a: bigint) => bigint;
-    test: (a: bigint) => boolean;
+    test: bigint;
     resultTrue: number;
     resultFalse: number;
 }
