@@ -14,9 +14,9 @@ const run = async () => {
 
 const findPath = (input: Input): number => {
     const queue: Item[] = [{
-        position: input.start,
+        position: input.end,
         steps: 0,
-        heuristic: getManhattanDistance(input.start, input.end),
+        heuristic: 0,
     }];
     const visited = new Set<string>();
     const edge = [input.area.length - 1, input.area[0].length - 1];
@@ -32,14 +32,15 @@ const findPath = (input: Input): number => {
         }
 
 
-        if (pointsEqual(currentItem.position, input.end)) {
+        if (input.area[currentItem.position[0]][currentItem.position[1]] === 'a'.charCodeAt(0)) {
             return currentItem.steps;
         }
 
         const neighbours = explodePoint(currentItem.position) as number[][];
         const validNeighbours = neighbours.filter(neighbour => isInBounds(neighbour, edge))
         const accessibleNewigbours = validNeighbours
-            .filter(neighbour => input.area[neighbour[0]][neighbour[1]] - input.area[currentItem.position[0]][currentItem.position[1]] <= 1);
+            .filter(neighbour => input.area[neighbour[0]][neighbour[1]] - input.area[currentItem.position[0]][currentItem.position[1]] >= -1);
+        // .filter(neighbour => input.area[neighbour[0]][neighbour[1]] - input.area[currentItem.position[0]][currentItem.position[1]] <= 1);
         const nonVisitedNeighbours = accessibleNewigbours.filter(neighbour => !visited.has(neighbour.join(',')));
 
         for (const neighbour of nonVisitedNeighbours) {
@@ -47,7 +48,7 @@ const findPath = (input: Input): number => {
             queue.push({
                 position: neighbour,
                 steps: steps,
-                heuristic: getManhattanDistance(neighbour, input.end) + steps,
+                heuristic: steps,
             });
         }
 
