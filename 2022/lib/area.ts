@@ -10,6 +10,39 @@ const isInBounds = (test: number[], edge: number[], start?: number[]): boolean =
     return true;
 }
 
+const getManhattanDistance = (from: number[], to: number[]): number => {
+    let distance = 0;
+    for (let i = 0; i < from.length; i++) {
+        distance += Math.abs(from[i] - to[i]);
+    }
+    return distance;
+}
+
+const explodePoint = (point: number[]): number[][] => {
+    const result: number[][] = [];
+    for (let dimensionIx = 0; dimensionIx < point.length; dimensionIx++) {
+        const newPoint = [...point];
+        newPoint[dimensionIx] = point[dimensionIx] + 1;
+        result.push(newPoint);
+        const newPoint2 = [...point];
+        newPoint2[dimensionIx] = point[dimensionIx] - 1;
+        result.push(newPoint2);
+    }
+    return result;
+}
+
+const pointsEqual = (a: number[], b: number[]): boolean => {
+    if (a.length !== b.length) {
+        return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 interface Distance {
     direction: Direction;
@@ -77,4 +110,7 @@ export {
     isInBounds,
     adjust2D,
     getDistance2D,
+    getManhattanDistance,
+    explodePoint,
+    pointsEqual,
 }
