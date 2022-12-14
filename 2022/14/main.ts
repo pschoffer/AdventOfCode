@@ -17,14 +17,14 @@ const run = async () => {
         countSand += sandArea[Number(key)].size;
     }
 
-    console.log(countSand);
+    console.log(countSand + 1);
 }
 
 const simulateSand = (input: Input): Record<number, Set<number>> => {
     const area: Record<number, Set<number>> = {};
 
     let sandRestPoint = simulateSandParticle(area, input);
-    while (sandRestPoint) {
+    while (sandRestPoint[0] !== 0) {
         if (!area[sandRestPoint[0]]) {
             area[sandRestPoint[0]] = new Set();
         }
@@ -36,9 +36,12 @@ const simulateSand = (input: Input): Record<number, Set<number>> => {
     return area;
 }
 
-const findFreeSpot = (blocks: Record<number, Set<number>>[], currentPoint: number[]): number[] | null => {
+const findFreeSpot = (blocks: Record<number, Set<number>>[], currentPoint: number[], floor: number): number[] | null => {
     const candidates: number[][] = ['S', 'SW', 'SE'].map(direction => adjust2D({ direction, length: 1 }, currentPoint));
     for (const candidate of candidates) {
+        if (candidate[0] >= floor) {
+            continue;
+        }
         if (blocks[0][candidate[0]] && blocks[0][candidate[0]].has(candidate[1])) {
             continue;
         }
@@ -50,20 +53,18 @@ const findFreeSpot = (blocks: Record<number, Set<number>>[], currentPoint: numbe
     return null;
 }
 
-const simulateSandParticle = (sand: Record<number, Set<number>>, input: Input): number[] | null => {
+const simulateSandParticle = (sand: Record<number, Set<number>>, input: Input): number[] => {
     let currentPoint = [...SAND_START];
 
-    while (currentPoint[0] <= input.maxY) {
-        const freeSpot = findFreeSpot([sand, input.area], currentPoint);
+    const floor = input.maxY + 1;
+    while (true) {
+        const freeSpot = findFreeSpot([sand, input.area], currentPoint, floor);
         if (freeSpot) {
             currentPoint = freeSpot;
         } else {
             return currentPoint;
         }
     }
-
-
-    return null;
 }
 
 const parseInput = (inputPath: string): Input => {
@@ -118,7 +119,7 @@ const parseInput = (inputPath: string): Input => {
 
     return {
         area,
-        maxY
+        maxY: maxY + 1
     };
 }
 
