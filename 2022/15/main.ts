@@ -6,31 +6,72 @@ const inputTestPath = path.join(__dirname, 'test1.txt');
 
 const run = async () => {
     // const input = parseInput(inputTestPath);
-    // const targetY = 10;
+    // const maxCoord = 20;
     const input = parseInput(inputPath);
-    const targetY = 2000000;
+    const maxCoord = 4000000;
 
-    const emptySpace = new Set<number>();
-    const beacons = new Set<number>();
+    const intervals: Record<number, number[][]> = {};
+    for (let i = 0; i < maxCoord; i++) {
+        intervals[i] = [[0, maxCoord]];
+    }
 
+    let count = 0;
     for (const line of input) {
-        if (line.beacon[0] === targetY) {
-            beacons.add(line.beacon[1]);
-        }
+        const { sensor, distance } = line;
+        const minY = Math.max(sensor[0] - distance, 0);
+        const maxY = Math.min(sensor[0] + distance, maxCoord);
 
-        const targetLineDistance = getManhattanDistance(line.sensor, [targetY, line.sensor[1]]);
-        const targetLineSpace = line.distance - targetLineDistance;
-        if (targetLineSpace <= 0) {
+        let currentYDiff = minY - sensor[0];
+        for (let y = minY; y <= maxY; y++) {
+
+            if (intervals[y]) {
+                const xDiff = distance - Math.abs(currentYDiff);
+                removeInterval(intervals[y], [sensor[1] - xDiff, sensor[1] + xDiff]);
+                if (intervals[y].length === 0) {
+                    delete intervals[y];
+                }
+            }
+
+            currentYDiff++;
+        }
+        console.log('Line done', count++, Object.keys(intervals).length);
+    }
+
+    const y = Number(Object.keys(intervals)[0]);
+    const x = Number(intervals[y][0][0]);
+    console.log(y + x * 4000000);
+}
+
+const removeInterval = (intervals: number[][], interval: number[]) => {
+    const [min, max] = interval;
+    let i = 0;
+    while (i < intervals.length) {
+        const [currentMin, currentMax] = intervals[i];
+        if (currentMin > max) {
+            break;
+        }
+        if (currentMax < min) {
+            i++;
             continue;
         }
 
-        for (let x = line.sensor[1] - targetLineSpace; x <= line.sensor[1] + targetLineSpace; x++) {
-            emptySpace.add(x);
+        if (currentMin < min && currentMax > max) {
+            intervals.splice(i, 1, [currentMin, min - 1], [max + 1, currentMax]);
+            break;
         }
-    }
+        if (currentMin < min) {
+            intervals.splice(i, 1, [currentMin, min - 1]);
+            continue;
+        }
+        if (currentMax > max) {
+            intervals.splice(i, 1, [max + 1, currentMax]);
+            break;
+        }
 
-    console.log(emptySpace.size - beacons.size);
+        intervals.splice(i, 1);
+    }
 }
+
 
 const parseInput = (inputPath: string) => {
     const fs = require('fs');
