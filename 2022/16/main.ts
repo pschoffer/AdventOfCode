@@ -2,8 +2,8 @@ const path = require('path');
 const inputPath = path.join(__dirname, 'input.txt');
 const inputTestPath = path.join(__dirname, 'test1.txt');
 
-// const MAX_TIME = 26;
-const MAX_TIME = 30;
+const MAX_TIME = 26;
+// const MAX_TIME = 30;
 
 const run = async () => {
     const input = parseInput(inputPath);
@@ -11,13 +11,13 @@ const run = async () => {
 
     let queue: Item[] = [
         {
-            position: 'AA',
+            position: ['AA', 'AA'],
             released: 0,
             minPotential: 0,
             potential: buildIdealScenario(input, [], MAX_TIME),
             minute: 0,
             openValves: [],
-            path: 'AA'
+            path: ['AA', 'AA'],
         }
     ];
 
@@ -69,57 +69,74 @@ const getItemKey = (item: Item) => {
     return `${item.position}-${item.openValves.join(',')}`;
 };
 
+const buildSubOption = (item: Item, valves: Record<string, Valve>, ix: number): string[] => {
+    const subOptions: string[] = [];
+
+    const currentValve = valves[item.position[ix]];
+    if (currentValve.rate > 0 && !item.openValves.includes(currentValve.id)) {
+        subOptions.push('open');
+    }
+
+    subOptions.push(...currentValve.neighbors);
+
+    return subOptions;
+}
+
 const buildOptions = (item: Item, valves: Record<string, Valve>): Item[] => {
     const result: Item[] = [];
 
-    const currentValve = valves[item.position];
+    const remainingValvesCount = calculateRemaining(valves, item);
     const remainingTime = MAX_TIME - item.minute - 1;
     const released = item.released + calculateIncrement(item.openValves, valves);
-    if (currentValve.rate > 0 && !item.openValves.includes(currentValve.id)) {
-        const openValves = [...item.openValves, currentValve.id]
-        const minPotential = released + calculateIncrement(openValves, valves) * remainingTime;
-        const potential = buildIdealScenario(valves, openValves, remainingTime) + minPotential;
-        result.push({
-            position: item.position,
-            minute: item.minute + 1,
-            openValves: openValves,
-            released,
-            minPotential,
-            potential,
-            path: item.path + '[O]'
-        });
-    }
-
-    const remainingValvesCount = calculateRemaining(valves, item);
-    if (remainingValvesCount) {
-
-        for (const neighbor of currentValve.neighbors) {
-            const minPotential = released + calculateIncrement(item.openValves, valves) * remainingTime;
-            const potential = buildIdealScenario(valves, item.openValves, remainingTime) + minPotential;
-            result.push({
-                position: neighbor,
-                minute: item.minute + 1,
-                openValves: [...item.openValves],
-                released,
-                potential,
-                minPotential,
-                path: item.path + `->${neighbor}`
-            });
-        }
-    } else {
+    if (!remainingValvesCount) {
         const minPotential = released + calculateIncrement(item.openValves, valves) * remainingTime;
         const potential = buildIdealScenario(valves, item.openValves, remainingTime) + minPotential;
-        result.push({
+        return [{
             position: item.position,
             minute: item.minute + 1,
             openValves: [...item.openValves],
             released,
             potential,
             minPotential,
-            path: item.path + '!'
-        });
+            path: item.path.map(p => p + '!')
+        }];
     }
 
+    const subOptions = [0, 1]
+        .map(ix => buildSubOption(item, valves, ix));
+    const combinations: string[][] = [];
+    for (let i = 0; i < subOptions[0].length; i++) {
+        for (let j = 0; j < subOptions[1].length; j++) {
+            combinations.push([subOptions[0][i], subOptions[1][j]]);
+        }
+    }
+
+    for (const combination of combinations) {
+        const openValvesSet = new Set(item.openValves);
+        const position = [...item.position];
+        const path = [...item.path];
+        for (let ix = 0; ix < 2; ix++) {
+            if (combination[ix] === 'open') {
+                openValvesSet.add(valves[position[ix]].id);
+                path[ix] += '[O]';
+            } else {
+                position[ix] = combination[ix];
+                path[ix] += '->' + combination[ix];
+            }
+        }
+        const openValves = [...openValvesSet];
+        const minPotential = released + calculateIncrement(openValves, valves) * remainingTime;
+        const potential = buildIdealScenario(valves, openValves, remainingTime) + minPotential;
+        result.push({
+            position,
+            minute: item.minute + 1,
+            openValves,
+            released,
+            minPotential,
+            potential,
+            path
+        });
+    }
 
     return result;
 }
@@ -188,13 +205,13 @@ const parseInput = (inputPath: string): Record<string, Valve> => {
 }
 
 interface Item {
-    position: string,
+    position: string[],
     released: number,
     minPotential: number,
     potential: number,
     minute: number,
     openValves: string[],
-    path: string,
+    path: string[],
 }
 
 interface Valve {
