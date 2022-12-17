@@ -5,7 +5,7 @@ const inputPath = path.join(__dirname, 'input.txt');
 const inputTestPath = path.join(__dirname, 'test1.txt');
 
 const WIDTH = 7;
-const ROCK_COUNT = 2022;
+const ROCK_COUNT = 1000000000000;
 const START_POSITION = [3, 2];
 
 const SHAPE_ORDER: SHAPE[] = ['-', '+', 'L', 'I', '#'];
@@ -40,14 +40,38 @@ const run = async () => {
     const area: boolean[][] = []
     let shapeIx = 0;
     let moveIx = 0;
+    let maxMoveIx = 0;
+    let fakedHeight = 0;
+
+    const pattern: { round: number, highestY: number }[] = [];
 
     for (let round = 0; round < ROCK_COUNT; round++) {
-        console.log('doing round', round);
+        const highestY = getHighestY(area);
+        // if (round % multiplier === 0) {
+
+        if (shapeIx === 0) {
+            if (maxMoveIx < moveIx) {
+                maxMoveIx = moveIx;
+            } else if (maxMoveIx === moveIx) {
+                pattern.push({ round, highestY });
+                if (pattern.length > 3) {
+                    const lastIx = pattern.length - 1;
+                    const incrementHeight = pattern[lastIx].highestY - pattern[lastIx - 1].highestY;
+                    const incrementRound = pattern[lastIx].round - pattern[lastIx - 1].round;
+
+                    const remainingRounds = ROCK_COUNT - round;
+                    const fakeRounds = Math.floor(remainingRounds / incrementRound)
+                    fakedHeight = fakeRounds * incrementHeight;
+
+                    round = round + fakeRounds * incrementRound;
+                }
+            }
+        }
+
         const shape = SHAPE_DEFINITIONS[SHAPE_ORDER[shapeIx++]];
         if (shapeIx >= SHAPE_ORDER.length) {
             shapeIx = 0;
         }
-        const highestY = getHighestY(area);
         let currentPosition = [highestY + shape.depth + START_POSITION[0] + 1, START_POSITION[1]];
         ensureArea(area, currentPosition);
         let savePosition = currentPosition;
@@ -76,7 +100,7 @@ const run = async () => {
         // printArea(area);
     }
 
-    console.log(getHighestY(area) + 1);
+    console.log(getHighestY(area) + 1 + fakedHeight);
 }
 
 const getHighestY = (area: boolean[][]): number => {
@@ -91,14 +115,12 @@ const getHighestY = (area: boolean[][]): number => {
     return highestY;
 }
 const addShapeToArea = (area: boolean[][], position: number[], shape: SHAPE_DEFINITION) => {
-    console.log('');
     const points: number[][] = [position];
     points.push(...shape.adjustments.map(a => adjustByDiff(position, a)));
 
     for (const point of points) {
         area[point[0]][point[1]] = true;
     }
-    console.log('');
 }
 
 const ensureArea = (area: boolean[][], position: number[]) => {
