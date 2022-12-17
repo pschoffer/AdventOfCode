@@ -44,6 +44,14 @@ const pointsEqual = (a: number[], b: number[]): boolean => {
 }
 
 
+const adjustByDiff = (a: number[], b: number[]): number[] => {
+    const result = [...a];
+    for (let i = 0; i < a.length; i++) {
+        result[i] += b[i];
+    }
+    return result;
+}
+
 interface Distance {
     direction: Direction;
     length: number;
@@ -113,4 +121,5 @@ export {
     getManhattanDistance,
     explodePoint,
     pointsEqual,
+    adjustByDiff,
 }
