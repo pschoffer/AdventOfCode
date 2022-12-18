@@ -1,36 +1,107 @@
-import { getManhattanDistance } from "../lib/area";
+import { getManhattanDistance, explodePoint } from "../lib/area";
 
 const path = require('path');
 const inputPath = path.join(__dirname, 'input.txt');
 const inputTestPath = path.join(__dirname, 'test1.txt');
 
-const SIDE_COUNT = 6;
-
 const run = async () => {
     const input = parseInput(inputPath);
     // const input = parseInput(inputTestPath);
 
-    const grouped: Record<number, Droplet[]> = {};
-    for (const droplet of input) {
-        if (!grouped[droplet.distance]) {
-            grouped[droplet.distance] = [];
+    const airPoints = findAirPoints(input);
+
+    const lavaPoints = new Set(input.map(droplet => makeKey(droplet.position)))
+    const airTouchingPoints = new Set(airPoints.map(makeKey))
+    const processedAirPoints = new Set<string>();
+
+    const pockets: AirPocket[] = []
+    for (const airPoint of airPoints) {
+        if (processedAirPoints.has(makeKey(airPoint))) {
+            continue;
         }
-        grouped[droplet.distance].push(droplet);
+        const pocket = findAirPocket(airPoint, lavaPoints, airTouchingPoints, processedAirPoints);
+        pockets.push(pocket);
     }
 
-    let freeSides = 0;
-    for (const droplet of input) {
-        const candidates = [grouped[droplet.distance - 1], grouped[droplet.distance], grouped[droplet.distance + 1]]
+    pockets.sort((a, b) => b.touch - a.touch);
+
+    console.log(pockets[0].touch)
+}
+
+const makeKey = (point: number[]): string => point.join('-');
+
+const findAirPocket = (startPoint: number[], lavaPoints: Set<string>, airTouchingPoints: Set<string>, processedAirPoints: Set<string>): AirPocket => {
+    let touch = 0;
+    let points: string[] = [];
+    const startKey = makeKey(startPoint);
+    if (!processedAirPoints.has(startKey)) {
+        const neighbours = explodePoint(startPoint);
+        let lavaNeighbours: number[][] = [];
+        let airNeighbourTouching: number[][] = [];
+        let airNeighbourNotTouching: number[][] = [];
+        for (const neighbour of neighbours) {
+            const key = makeKey(neighbour);
+            if (lavaPoints.has(key)) {
+                lavaNeighbours.push(neighbour);
+            } else if (airTouchingPoints.has(key)) {
+                airNeighbourTouching.push(neighbour);
+            } else {
+                airNeighbourNotTouching.push(neighbour)
+            }
+        }
+
+        const fill = lavaNeighbours.length
+        processedAirPoints.add(startKey);
+        touch += fill;
+        points.push(startKey)
+
+        const neighboursToInclude = fill > 0 ? airNeighbourTouching.concat(airNeighbourNotTouching) : airNeighbourTouching;
+        for (const neighbour of neighboursToInclude) {
+            const neighbourResult = findAirPocket(neighbour, lavaPoints, airTouchingPoints, processedAirPoints);
+            touch += neighbourResult.touch;
+            points = points.concat(neighbourResult.points);
+        }
+
+    }
+
+    return {
+        points,
+        touch
+    }
+
+}
+
+const findAirPoints = (droplets: Droplet[]): number[][] => {
+    const groupedLava: Record<number, Droplet[]> = {};
+    for (const droplet of droplets) {
+        if (!groupedLava[droplet.distance]) {
+            groupedLava[droplet.distance] = [];
+        }
+        groupedLava[droplet.distance].push(droplet);
+    }
+
+    const airCoordinateSet: Set<string> = new Set();
+    for (const droplet of droplets) {
+        const candidates = [groupedLava[droplet.distance - 1], groupedLava[droplet.distance], groupedLava[droplet.distance + 1]]
             .filter(arr => !!arr)
             .flat();
 
-        const directNeighbours = candidates
-            .map(candidate => getManhattanDistance(candidate.position, droplet.position))
-            .filter(distance => distance === 1)
-        freeSides += SIDE_COUNT - directNeighbours.length;
+        const fullNeighbours = candidates
+            .filter(candidate => getManhattanDistance(candidate.position, droplet.position) === 1)
+            .map(candidate => candidate.position.join(','))
+
+        const allNeighbours = explodePoint(droplet.position);
+        for (const neighbour of allNeighbours) {
+            const key = neighbour.join(',');
+            if (!fullNeighbours.includes(key)) {
+                airCoordinateSet.add(key)
+            }
+        }
     }
 
-    console.log(freeSides)
+    const airCoordinates: number[][] = [...airCoordinateSet]
+        .map(coordinateString => coordinateString.split(',').map(Number))
+    return airCoordinates;
 }
 
 const parseInput = (inputPath: string) => {
@@ -52,6 +123,12 @@ const parseInput = (inputPath: string) => {
     result.sort((a, b) => a.distance - b.distance);
     return result;
 }
+
+interface AirPocket {
+    points: string[],
+    touch: number
+}
+
 
 interface Droplet {
     position: number[],
