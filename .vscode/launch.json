@@ -15,13 +15,35 @@
             "args": [
                 "${relativeFile}"
             ],
-            "runtimeArgs": [
-                "-r",
-                "ts-node/register"
-            ],
             "cwd": "${workspaceRoot}",
             "protocol": "inspector",
             "internalConsoleOptions": "openOnSessionStart"
+        },
+        // tsc
+        {
+            "type": "typescript",
+            "request": "launch",
+            "name": "tsc",
+            "program": "${workspaceFolder}/node_modules/typescript/lib/tsc.js",
+            "args": [
+                "-p",
+                "${workspaceFolder}/tsconfig.json",
+                "--outDir",
+                "${workspaceFolder}/out"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
+            "program": "${relativeFile}",
+            "preLaunchTask": "tsc",
+            "outFiles": [
+                "${relativeFileDirname}/out/**/*.js"
+            ]
         }
     ]
 }
