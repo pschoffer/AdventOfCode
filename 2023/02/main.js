@@ -6,7 +6,7 @@ const { sum } = require(__dirname + '/../lib/math')
 const run = async () => {
     const input = parsePath(inputPath);
 
-    const possibleGames = input.filter(isGamePossible).map(game => game.gameId);
+    const possibleGames = input.map(getGamePower);
 
     console.log(sum(possibleGames));
 
@@ -27,6 +27,24 @@ const isGamePossible = (game) => {
         }
     }
     return true;
+}
+
+const getGamePower = (game) => {
+    const minCubes = {
+        'red': 0,
+        'green': 0,
+        'blue': 0,
+    }
+    for (const round of game.rounds) {
+        for (const color of COLORS) {
+            if (round.cubes[color] && round.cubes[color] > minCubes[color]) {
+                minCubes[color] = round.cubes[color];
+            }
+        }
+    }
+
+    return minCubes.red * minCubes.green * minCubes.blue;
+
 }
 
 
