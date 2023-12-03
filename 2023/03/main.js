@@ -7,11 +7,40 @@ const run = async () => {
     const input = parsePath(inputPath);
 
 
-    const numbersCloseToSymbol = Object.keys(input.numbers).filter((numberId) => isCloseToSymbol(input, numberId));
+    const gears = input.symbols
+        .map((_, ix) => toGear(input, ix))
+        .filter(item => !!item)
+        .map(gear => gear.ratio)
 
-    const values = numbersCloseToSymbol.map((numberId) => input.numbers[numberId].value);
-    console.log(sum(values));
+    console.log(sum(gears));
 
+}
+
+const toGear = (input, symbolIx) => {
+    const coord = input.symbols[symbolIx];
+
+    if (input.area[coord.y][coord.x].symbol !== '*') {
+        return null;
+    }
+    const cells = getNeighbourCells(input.area, coord, coord);
+    const numbers = new Set();
+    for (const cell of cells) {
+        if (input.area[cell.y][cell.x] && input.area[cell.y][cell.x].type === 'number') {
+            numbers.add(input.area[cell.y][cell.x].numberId);
+        }
+    }
+
+    if (numbers.size !== 2) {
+        return null;
+    }
+
+    const numberIds = [...numbers];
+    const ratio = input.numbers[numberIds[0]].value * input.numbers[numberIds[1]].value;
+    return {
+        ...coord,
+        numberIds,
+        ratio
+    };
 }
 
 const isCloseToSymbol = (input, numberId) => {
@@ -69,6 +98,7 @@ const parsePath = (inputPath) => {
 
     const area = [];
     const numbers = {};
+    const symbols = [];
     let currentNumberId = 0;
     let lastNumberId = 0;
     for (let y = 0; y < lines.length; y++) {
@@ -111,6 +141,7 @@ const parsePath = (inputPath) => {
                     type: 'symbol',
                     symbol: item,
                 })
+                symbols.push({ x, y });
             }
         }
         if (currentNumberId) {
@@ -125,7 +156,8 @@ const parsePath = (inputPath) => {
 
     return {
         area,
-        numbers
+        numbers,
+        symbols
     };
 }
 
