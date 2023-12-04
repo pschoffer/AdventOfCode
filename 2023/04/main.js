@@ -6,16 +6,33 @@ const { sum } = require(__dirname + '/../lib/math')
 const run = async () => {
     const input = parsePath(inputPath);
 
-    const points = input.map(card => getPoints(card));
+    const counts = {};
+    for (const card of input) {
+        if (!counts[card.cardId]) {
+            counts[card.cardId] = 1;
+        }
+        const cardCount = counts[card.cardId];
+        const winningCount = getWinningCount(card);
 
-    console.log(sum(points));
+        let currentCardAdjustment = 0;
+        while (winningCount > currentCardAdjustment) {
+            currentCardAdjustment++;
+            const newCardId = card.cardId + currentCardAdjustment;
+            counts[newCardId] = cardCount + (counts[newCardId] || 1);
+        }
+    }
+
+    const cardCounts = input.map(card => counts[card.cardId]);
+
+    console.log(sum(cardCounts));
 
 }
 
-const getPoints = (card) => {
-    const winningNumbers = card.cardNumbers.filter(number => card.winningNumbers.includes(number));
+const getWinningCount = (card) => {
+    const numbersSet = new Set(card.cardNumbers);
+    const winningNumbers = [...numbersSet].filter(number => card.winningNumbers.includes(number));
 
-    return winningNumbers.length ? Math.pow(2, winningNumbers.length - 1) : 0;
+    return winningNumbers.length;
 }
 
 const parsePath = (inputPath) => {
@@ -30,7 +47,7 @@ const parsePath = (inputPath) => {
         const line = lines[y];
 
         const [cardIdString, rest] = line.split(':');
-        const cardId = Number(cardIdString.trim().split(' ')[1]);
+        const cardId = Number(cardIdString.trim().split(/\s+/)[1]);
 
         const [left, right] = rest.split('|');
 
