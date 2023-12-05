@@ -6,8 +6,59 @@ const { sum } = require(__dirname + '/../lib/math')
 const run = async () => {
     const input = parsePath(inputPath);
 
-    const locations = input.seeds.map(seed => mapSeedToLocation(seed, input.maps))
-    console.log(Math.min(...locations));
+    const seedIntervals = [];
+    for (let ix = 0; ix < input.seeds.length; ix = ix + 2) {
+        const element = input.seeds[ix];
+        seedIntervals.push({
+            start: element,
+            end: element + input.seeds[ix + 1] - 1
+        })
+
+    }
+
+    const locations = seedIntervals.map(seedInterval => mapSeedIntervalToLocation(seedInterval, input.maps))
+    const locationsFlattened = locations.flat();
+
+    console.log(Math.min(...locationsFlattened));
+
+}
+
+const mapSeedIntervalToLocation = ({ start, end }, maps) => {
+
+    const locations = [];
+    let currentSeed = start;
+    let step = end - currentSeed;
+    while (currentSeed <= end) {
+        step = end - currentSeed + 1;
+        let currentValue = currentSeed;
+        for (const map of maps) {
+            const mappings = map.maps;
+
+            for (const mapping of mappings) {
+                if (currentValue < mapping.sourceStart) {
+                    const stepCandidate = mapping.sourceStart - currentValue;
+                    if (stepCandidate < step) {
+                        step = stepCandidate;
+                    }
+                    break;
+                }
+                if (currentValue > mapping.sourceEnd) {
+                    continue;
+                }
+
+                const stepCandidate = (mapping.sourceEnd - currentValue) + 1;
+                if (stepCandidate < step) {
+                    step = stepCandidate;
+                }
+                currentValue += mapping.diff;
+                break;
+            }
+        }
+        locations.push(currentValue);
+        currentSeed += step;
+    }
+
+    return locations;
 
 }
 
