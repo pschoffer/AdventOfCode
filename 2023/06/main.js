@@ -6,23 +6,57 @@ const { sum, mul } = require(__dirname + '/../lib/math')
 const run = async () => {
     const input = parsePath(inputPath);
 
-    const waysToBeat = input.map(countWaysToWin);
+    const waysToBeat = countWaysToWin(input);
 
-    console.log(mul(waysToBeat));
+    console.log(waysToBeat);
 
 }
 
 const countWaysToWin = (race) => {
     const { time, distanceToBeat } = race;
 
-    let wayToBeat = 0;
-    for (let charge = 1; charge < time; charge++) {
-        const distance = (time - charge) * charge;
-        if (distance > distanceToBeat) {
-            wayToBeat++;
+    const up = findChange(0, time, time, distanceToBeat, 'up');
+    const down = findChange(0, time, time, distanceToBeat, 'down');
+
+    return down - up + 1;
+}
+
+const isBetter = (test, time, distanceToBeat) => {
+    const distance = test * (time - test);
+    return distance > distanceToBeat;
+}
+
+const findChange = (start, end, time, distanceToBeat, mode) => {
+    if (end === start) {
+        return end;
+    } else if (end - start === 1) {
+        const candidates = mode === 'up' ? [start, end] : [end, start];
+        const betterCandidate = candidates.find(candidate => isBetter(candidate, time, distanceToBeat));
+        return betterCandidate || end;
+    }
+
+    const test = Math.floor((start + end) / 2);
+
+    const isBetterResult = isBetter(test, time, distanceToBeat);
+    console.log(`${start} <-> ${end} = ${test} - ${isBetterResult}`)
+
+    let newStart = start;
+    let newEnd = end;
+    if (mode === 'up') {
+        if (isBetterResult) {
+            newEnd = test;
+        } else {
+            newStart = test + 1;
+        }
+    } else {
+        if (isBetterResult) {
+            newStart = test;
+        } else {
+            newEnd = test - 1;
         }
     }
-    return wayToBeat;
+
+    return findChange(newStart, newEnd, time, distanceToBeat, mode);
 }
 
 const parsePath = (inputPath) => {
@@ -36,20 +70,10 @@ const parsePath = (inputPath) => {
     const distanceString = lines[1].split(':')[1].trim();
 
 
-    const times = timeSting.split(/\s+/g).map(Number)
-    const distances = distanceString.split(/\s+/g).map(Number)
+    const time = Number(timeSting.split(/\s+/g).join(''))
+    const distance = Number(distanceString.split(/\s+/g).join(''))
 
-
-    const races = [];
-    for (let ix = 0; ix < times.length; ix++) {
-        races.push({
-            time: times[ix],
-            distanceToBeat: distances[ix]
-        })
-    }
-
-
-    return races
+    return { time, distanceToBeat: distance }
 }
 
 
