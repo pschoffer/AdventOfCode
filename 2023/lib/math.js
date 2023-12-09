@@ -1,5 +1,5 @@
 const sum = (arr) => arr.reduce((a, b) => a + b, 0);
-
+const mul = (arr) => arr.reduce((a, b) => a * b, 1);
 function group(arr, size) {
     const result = [];
     for (let i = 0; i < arr.length; i += size) {
@@ -10,5 +10,6 @@ function group(arr, size) {
 
 module.exports = {
     sum,
+    mul,
     group
 }
