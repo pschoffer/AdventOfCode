@@ -7,6 +7,10 @@ const run = async () => {
     const input = parsePath(inputPath);
 
     input.sort(compareHands)
+    for (const hand of input) {
+        console.log(`${hand.cards.join('')} ${hand.type} ${hand.bid}`)
+
+    }
 
     const winnings = input.map((hand, ix) => (ix + 1) * hand.bid);
 
@@ -37,20 +41,24 @@ const compareHands = (hand1, hand2) => {
     return 0;
 }
 
-const CARDS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+const CARDS = ['J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A'];
 const handTypes = ['one', 'pair', 'twoPairs', 'three', 'fullHouse', 'four', 'five'];
 
-const getType = (counts) => {
+const getType = (counts, jokerCount) => {
     const values = Object.values(counts);
 
-    if (values.includes(5)) {
+    values.sort();
+    const highestCount = values[values.length - 1];
+    const secondHighestCount = values[values.length - 2];
+
+    if (highestCount + jokerCount === 5 || jokerCount === 5) {
         return 'five';
     }
-    if (values.includes(4)) {
+    if (highestCount + jokerCount === 4) {
         return 'four';
     }
-    if (values.includes(3)) {
-        if (values.includes(2)) {
+    if (highestCount + jokerCount === 3) {
+        if (secondHighestCount === 2) {
             return 'fullHouse';
         }
         return 'three';
@@ -60,7 +68,7 @@ const getType = (counts) => {
     if (pairCount === 2) {
         return 'twoPairs';
     }
-    if (pairCount === 1) {
+    if (highestCount + jokerCount === 2) {
         return 'pair';
     }
     return 'one';
@@ -78,14 +86,20 @@ const parsePath = (inputPath) => {
         const [cardString, bidString] = line.split(' ');
         const cards = cardString.split('');
         const counts = {};
+        let jokerCount = 0;
         for (const card of cards) {
+            if (card === 'J') {
+                jokerCount++;
+                continue;
+            }
             counts[card] = (counts[card] || 0) + 1;
         }
 
         hands.push({
             cards: cards,
             counts,
-            type: getType(counts),
+            jokerCount,
+            type: getType(counts, jokerCount),
             bid: Number(bidString)
         });
     }
