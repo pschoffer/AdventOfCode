@@ -23,28 +23,75 @@ const findLength = (input) => {
         current: start,
         ip: 0,
         length: 0,
-        cache: {}
+        cache: {},
+        loopStart: null,
+        loopSize: 0,
+        matchStarted: {},
+        matchEnded: {},
     }));
 
     let allDone = false;
 
     let counter = 0;
+    let remainingStatuses = [...statuses];
     while (!allDone) {
         counter++;
-        const shortestStatus = statuses[0];
-        if (counter % 1000 === 0) {
-            console.log(`${shortestStatus.start} ${shortestStatus.length}: ${shortestStatus.current} ${shortestStatus.ip}`);
-        }
+        const shortestStatus = remainingStatuses[0];
 
         findEnd(input, shortestStatus, ends);
 
+        const key = getKey(shortestStatus);
+
+        if (key === shortestStatus.loopStart) {
+            shortestStatus.finishedLoop = true;
+            shortestStatus.loopSize = shortestStatus.length - shortestStatus.loopStartLength;
+            remainingStatuses = remainingStatuses.filter(status => !status.finishedLoop);
+        } else if (shortestStatus.cache[key]) {
+            shortestStatus.loopStart = key;
+            shortestStatus.loopStartLength = shortestStatus.length;
+        } else {
+            shortestStatus.cache[key] = true;
+        }
+
+        remainingStatuses.sort((a, b) => a.length - b.length);
+
+        allDone = remainingStatuses.length === 0;
+    }
+
+    allDone = false;
+    while (!allDone) {
         statuses.sort((a, b) => a.length - b.length);
 
-        const lengths = statuses.map(status => status.length);
-        allDone = lengths.every(length => length === lengths[0]);
+        const shortestStatus = statuses[0];
+        const longestStatus = statuses[statuses.length - 1];
+
+        const diff = longestStatus.length - shortestStatus.length;
+        const howManyLoopsAway = Math.floor(diff / shortestStatus.loopSize);
+        if (diff % shortestStatus.loopSize === 0) {
+            shortestStatus.length += howManyLoopsAway * shortestStatus.loopSize;
+
+            if (!shortestStatus.matchStarted[longestStatus.current]) {
+                shortestStatus.matchStarted[longestStatus.current] = shortestStatus.length;
+            } else if (shortestStatus.matchStarted[longestStatus.current] && !shortestStatus.matchEnded[longestStatus.current]) {
+                shortestStatus.matchEnded[longestStatus.current] = true;
+                const matchLength = shortestStatus.length - shortestStatus.matchStarted[longestStatus.current];
+                if (matchLength > shortestStatus.loopSize) {
+                    shortestStatus.loopSize = matchLength;
+                }
+            }
+        } else {
+            shortestStatus.length += (howManyLoopsAway + 1) * shortestStatus.loopSize;
+        }
+
+
+        allDone = statuses.every(status => status.length === statuses[0].length);
     }
 
     return statuses[0].length;
+}
+
+const getKey = (status) => {
+    return `${status.current}${status.ip}`;
 }
 
 const findEnd = (input, status, ends) => {
