@@ -8,32 +8,34 @@ const run = async () => {
     const input = parseInput(inputPath);
 
     let result = 0;
+    let foundNumbers = new Set<Number>();
 
     for (const interval of input) {
-        let current = interval.low;
+        const maxPatternSize = (interval.high + '').length / 2;
 
-        while (current <= interval.high) {
-            const halfs = getHalfs(current);
-            console.log('Testing', current);
-            if (!halfs) {
+        for (let paternSize = 1; paternSize <= maxPatternSize; paternSize++) {
+
+            let current = interval.low;
+            while (current <= interval.high) {
+                const matches = getClosestMatch(current, paternSize);
+                console.log('Testing', current, ' vs ', matches.currentMatch);
+
+                if (current === matches.currentMatch && !foundNumbers.has(current)) {
+                    console.log('Found it', current);
+                    result += current;
+                    foundNumbers.add(current);
+                }
+
                 const digitCount = (current + '').length;
-
-                current = Math.pow(10, digitCount);
-                continue;
+                const higherDigit = Math.pow(10, digitCount);
+                if (current < matches.currentMatch) {
+                    current = Math.min(matches.currentMatch, higherDigit);
+                } else if (!matches.nextMatch) {
+                    current = higherDigit;
+                } else {
+                    current = matches.nextMatch;
+                }
             }
-
-            if (halfs[0] === halfs[1]) {
-                result += current;
-                console.log('Increasing', result);
-            }
-
-            const half0Num = Number(halfs[0]);
-            const half1Num = Number(halfs[1]);
-
-
-            const newTry = half0Num <= half1Num ? ((Number(halfs[0] || '') + 1) + '') : half0Num + '';
-
-            current = Number(newTry + newTry)
         }
     }
 
@@ -41,18 +43,38 @@ const run = async () => {
     console.log('result', result)
 }
 
-const getHalfs = (id: number) => {
+const getClosestMatch = (id: number, paternSize: number) => {
+
     const stringId = id + '';
     const lenght = stringId.length;
 
-    if (lenght % 2) {
-        return null;
+    let patern = '';
+    if (lenght < paternSize) {
+        const zeros = paternSize - lenght;
+        patern = stringId;
+        for (let i = 0; i < zeros; i++) {
+            patern += '0';
+        }
+    } else {
+        patern = stringId.substring(0, paternSize);
     }
 
-    const firstHalv = stringId.substring(0, lenght / 2)
-    const secondHalv = stringId.substring(lenght / 2);
+    const repeats = Math.max(lenght / paternSize, 2);
 
-    return [firstHalv, secondHalv]
+    let currentMatch = '';
+    for (let i = 0; i < repeats; i++) {
+        currentMatch += patern;
+    }
+
+    const newPatern = (Number(patern) + 1) + '';
+    let nextMatch = null;
+    if (newPatern.length === paternSize) {
+        nextMatch = '';
+        for (let i = 0; i < repeats; i++) {
+            nextMatch += newPatern;
+        }
+    }
+    return { currentMatch: Number(currentMatch), nextMatch: Number(nextMatch) };
 }
 
 const parseInput = (inputPath: string) => {
