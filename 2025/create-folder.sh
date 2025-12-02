@@ -16,12 +16,12 @@ const inputTestPath = path.join(__dirname, 'test1.txt');
 
 const run = async () => {
     const input = parseInput(inputTestPath);
-    console.log(input)
+    console.log(JSON.stringify(input, null, 2))
 }
 
 const parseInput = (inputPath: string) => {
     const data = fs.readFileSync(inputPath, 'utf8');
-    const lines = data.split("\n");
+    const lines: string[] = data.split("\n");
 
     const result = [];
 
