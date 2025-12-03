@@ -9,20 +9,23 @@ interface NumberFound {
     value: number;
 }
 
+const BATTERY_COUNT = 12;
 const run = async () => {
     const input = parseInput(inputPath);
 
     let resultSumJoltage = 0;
     for (const bank of input) {
-        const highNumbers = findHighestAndSecondHighest(bank);
-        let resultJoltageString = ''
-        if (highNumbers.highest?.ix === bank.length - 1) {
-            resultJoltageString = (highNumbers.secondHighest?.value + '') + (highNumbers.highest?.value + '')
-        } else {
-            const remainingJoltage = bank.splice((highNumbers.highest?.ix || 0) + 1);
-            const highestRemaining = findHighestAndSecondHighest(remainingJoltage);
-            resultJoltageString = (highNumbers.highest?.value + '') + (highestRemaining.highest?.value + '')
+        let resultJoltageString = '';
+        let latestDigitIx = -1;
+        for (let digitIx = 0; digitIx < BATTERY_COUNT; digitIx++) {
+            const digitsAfter = BATTERY_COUNT - (digitIx + 1);
+            const validNumbersToSearch = [...bank].slice(latestDigitIx + 1, bank.length - digitsAfter);
+            const highest = findHighest(validNumbersToSearch);
+            resultJoltageString += highest?.value;
+            latestDigitIx = (highest?.ix || 0) + (latestDigitIx + 1);
         }
+
+
         const resultJoltage = Number(resultJoltageString);
         resultSumJoltage += resultJoltage;
         console.log('resultJoltage', resultJoltage)
@@ -30,19 +33,17 @@ const run = async () => {
     console.log('result', resultSumJoltage)
 }
 
-const findHighestAndSecondHighest = (numbers: number[]) => {
+const findHighest = (numbers: number[]) => {
     let highest: NumberFound | null = null;
-    let secondHighest: NumberFound | null = null;
 
     for (let ix = 0; ix < numbers.length; ix++) {
         const value = numbers[ix] || 0;
         if (!highest || value > (highest as any).value) {
-            secondHighest = highest;
             highest = { ix, value }
         }
     }
 
-    return { highest, secondHighest };
+    return highest;
 }
 
 const parseInput = (inputPath: string) => {
