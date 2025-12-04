@@ -12,10 +12,19 @@
             "name": "Current TS File",
             "type": "node",
             "request": "launch",
-            "args": [
-                "${relativeFile}"
+            "program": "${fileBasename}",
+            "cwd": "${fileDirname}",
+            "runtimeExecutable": "npx",
+            "runtimeArgs": [
+                "tsx"
             ],
-            "cwd": "${workspaceRoot}",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
             "protocol": "inspector",
             "internalConsoleOptions": "openOnSessionStart"
         },
