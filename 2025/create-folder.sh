@@ -8,9 +8,11 @@ touch test1.txt
 touch input.txt
 
 cat > "main.ts" << EOF
-const path = require('path');
-const fs = require('fs');
+import * as path from 'path';
+import * as fs from 'fs';
+import { explode, parseArea } from '../lib/area.js';
 
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const inputPath = path.join(__dirname, 'input.txt');
 const inputTestPath = path.join(__dirname, 'test1.txt');
 
