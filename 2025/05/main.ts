@@ -9,23 +9,48 @@ const inputTestPath = path.join(__dirname, 'test1.txt');
 const run = async () => {
     const input = parseInput(inputPath);
 
-    let result = 0;
+    let combinedRanges: [number, number][] = [...input.ranges];
+    combinedRanges.sort((a, b) => a[0] - b[0]);
+    let didRefinement = false;
 
-    const isFresh = (id: number) => {
-        for (let range of input.ranges) {
-            if (id >= range[0] && id <= range[1]) {
-                return true;
+    do {
+        didRefinement = false;
+        let newCombinedRanges: [number, number][] = []
+        for (let currentRange of combinedRanges) {
+            let shouldCombine = false;
+            for (let ix = 0; ix < newCombinedRanges.length; ix++) {
+                const candidateRange = newCombinedRanges[ix];
+                if (!candidateRange) {
+                    continue;
+                }
+                if (currentRange[0] >= candidateRange[0] && currentRange[0] <= candidateRange[1]) {
+                    shouldCombine = true;
+                }
+                if (currentRange[1] >= candidateRange[0] && currentRange[1] <= candidateRange[1]) {
+                    shouldCombine = true;
+                }
+
+                if (shouldCombine) {
+                    const newRange: [number, number] = [Math.min(candidateRange[0], currentRange[0]), Math.max(candidateRange[1], currentRange[1])];
+                    newCombinedRanges[ix] = newRange;
+                    break;
+                }
+            }
+            if (!shouldCombine) {
+                newCombinedRanges.push(currentRange);
             }
         }
-        return false;
+        console.log(`Refining ranges, old ${combinedRanges.length}, new ${newCombinedRanges.length}`)
+        didRefinement = newCombinedRanges.length < combinedRanges.length;
+        combinedRanges = newCombinedRanges;
+        combinedRanges.sort((a, b) => a[0] - b[0]);
+    } while (didRefinement)
+
+    let result = 0;
+    for (let range of combinedRanges) {
+        result += range[1] - range[0] + 1;
     }
 
-    for (let id of input.ids) {
-        if (isFresh(id)) {
-            console.log(`Found fresh id ${id}`)
-            result++;
-        }
-    }
     console.log(`Result ${result}`)
 }
 
