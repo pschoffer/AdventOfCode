@@ -12,13 +12,11 @@ const run = async () => {
 
     let result = 0;
 
-    for (let ix = 0; ix < (input.operatorParts?.length || 0); ix++) {
-        const operation = input.operatorParts?.[ix] || '+'
+    for (let problem of input) {
+        const operation = problem.operator;
         let localResult = operation === '+' ? 0 : 1;
 
-        for (let numbers of input.numberParts) {
-            const number = numbers[ix] || 0;
-
+        for (let number of problem.numbers) {
             if (operation === '+') {
                 localResult += number;
             } else {
@@ -35,6 +33,11 @@ const run = async () => {
     console.log('result', result)
 }
 
+interface Problem {
+    operator: string;
+    numbers: number[];
+}
+
 const parseInput = (inputPath: string) => {
     const data = fs.readFileSync(inputPath, 'utf8');
     const lines: string[] = data.split("\n");
@@ -49,31 +52,37 @@ const parseInput = (inputPath: string) => {
     }
 
     const lineParts = lines.map(line => breakStringByIndexes(line, breakIndexes))
-    const numberParts: number[][] = []
+    const numberParts = lineParts.slice(0, -1)
+    const operationParts = lineParts[lineParts.length - 1];
+    const problems: Problem[] = []
 
-    for (let ix = 0; ix < lineParts.length - 1; ix++) {
-        numberParts.push((lineParts[ix] || []).map(Number));
+    for (let problemIx = 0; problemIx < numberParts[0]!.length; problemIx++) {
+        const problemWidth = numberParts[0]![problemIx]!.length;
+        const numbers: number[] = [];
+        for (let charIx = 0; charIx < problemWidth; charIx++) {
+            let numberString = ''
+            for (let lineIx = 0; lineIx < (numberParts.length || 0); lineIx++) {
+                const char = numberParts[lineIx]![problemIx]?.charAt(charIx);
+                numberString += char;
+            }
+            numbers.push(Number(numberString))
+        }
+        problems.push({ numbers, operator: operationParts![problemIx]!.trim() })
     }
-    const operatorParts = lineParts[lineParts.length - 1];
 
-    return { numberParts, operatorParts };
+    return problems;
 }
 
 const breakStringByIndexes = (source: string, breakIxs: number[]) => {
-    let lastIndex = 0;
+    let lastIndex = -1;
 
     const parts: string[] = [];
     for (let breakIx of breakIxs) {
-        const part = source.slice(lastIndex, breakIx)
+        const part = source.slice(lastIndex + 1, breakIx)
         parts.push(part)
         lastIndex = breakIx;
     }
-    parts.push(source.slice(lastIndex))
-
-
-    for (let ix = 0; ix < parts.length; ix++) {
-        parts[ix] = parts[ix]?.replaceAll(/\s*/g, '') || '';
-    }
+    parts.push(source.slice(lastIndex + 1))
 
     return parts;
 }
