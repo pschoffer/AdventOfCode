@@ -10,32 +10,36 @@ const run = async () => {
     const input = parseInput(inputPath);
 
     const lastSpliterY = Math.max(...Object.keys(input.splitters).map(Number))
-    let splitCount = 0;
-    let activeBeams = input.beams;
-    while (activeBeams.length) {
-        let newActiveBeamStrings: Set<string> = new Set();
-        for (const beam of activeBeams) {
-            const candidate: number[] = [beam[0]! + 1, beam[1]!]
-            const isSpliter = input.splitters[candidate[0]!]?.has(candidate[1]!);
+    let calculatedTimelines: Record<number, Record<number, number>> = {}
 
-            if (isSpliter) {
-                splitCount++;
-                newActiveBeamStrings.add(JSON.stringify([candidate[0]!, candidate[1]! - 1]));
-                newActiveBeamStrings.add(JSON.stringify([candidate[0]!, candidate[1]! + 1]));
-            } else {
-                newActiveBeamStrings.add(JSON.stringify(candidate))
-            }
+    const calculateExtraTimelines = (start: number[]) => {
+        const alreadyCalculated = calculatedTimelines[start[0]!]?.[start[1]!]
+        if (alreadyCalculated !== undefined) {
+            return alreadyCalculated
         }
 
-        const newActiveBeams = [...newActiveBeamStrings]
-            .map(beamString => JSON.parse(beamString) as number[])
-            .filter(beam => beam[0]! <= lastSpliterY);
+        if (start[0]! > lastSpliterY) {
+            return 1;
+        }
 
-        activeBeams = newActiveBeams;
-        console.log('New beams', JSON.stringify(activeBeams))
+        const candidate = [start[0]! + 1, start[1]!]
+        let extraTimelines = 0;
+        if (input.splitters[candidate[0]!]?.has(candidate[1]!)) {
+            extraTimelines += calculateExtraTimelines([candidate[0]!, candidate[1]! - 1])
+            extraTimelines += calculateExtraTimelines([candidate[0]!, candidate[1]! + 1])
+        } else {
+            extraTimelines = calculateExtraTimelines(candidate)
+        }
+
+        if (!calculatedTimelines[start[0]!]) {
+            calculatedTimelines[start[0]!] = {};
+        }
+        calculatedTimelines[start[0]!]![start[1]!] = extraTimelines;
+        return extraTimelines;
     }
 
-    console.log(splitCount)
+    const result = calculateExtraTimelines(input.beams[0]!)
+    console.log(result)
 }
 
 const parseInput = (inputPath: string) => {
