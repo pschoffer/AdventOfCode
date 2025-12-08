@@ -51,3 +51,26 @@ export const explode = (coordinates: number[], minCoordinate: number[], maxCoord
 
     return finalOptions;
 }
+
+
+export const calculateDistanceEu = (a: number[], b: number[]) => {
+    let distance = 0;
+
+    for (let ix = 0; ix < a.length; ix++) {
+        distance += Math.pow(a[ix]! - b[ix]!, 2)
+    }
+
+    distance = Math.sqrt(distance)
+
+    return distance;
+}
+
+export const calculateDistance = (a: number[], b: number[]) => {
+    let distance = 0;
+
+    for (let ix = 0; ix < a.length; ix++) {
+        distance += Math.abs(a[ix]! - b[ix]!)
+    }
+
+    return distance;
+}
