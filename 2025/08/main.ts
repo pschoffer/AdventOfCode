@@ -17,7 +17,7 @@ type PossibleConnections = Record<string, {
 
 // const CONNECTIN_COUNT = 10;
 // const CONNECTIN_COUNT = 500;
-const CONNECTIN_COUNT = 1000;
+// const CONNECTIN_COUNT = 1000;
 
 const run = async () => {
     const input = parseInput(inputPath);
@@ -53,7 +53,8 @@ const run = async () => {
 
 
     let connectionCount = 0;
-    while (connectionCount < CONNECTIN_COUNT) {
+    let lastPair;
+    while (circuits.length > 1) {
         const candidates = Object.keys(possibleConnections)
         candidates.sort((a, b) => (possibleConnections[a]?.distances[0]?.distance! || 99999999) - (possibleConnections[b]?.distances[0]?.distance! || 99999999))
 
@@ -106,15 +107,15 @@ const run = async () => {
         if (!alreadyConnected) {
             circuits = newCircuits;
         }
+        lastPair = [source, target]
     }
 
-    const circuitLenghts = circuits.map(circuit => circuit.length)
-    circuitLenghts.sort((a, b) => b - a)
-
-    const result = circuitLenghts[0]! * circuitLenghts[1]! * circuitLenghts[2]!;
 
 
-    console.log(result)
+    const result = lastPair?.map(coordinateString => JSON.parse(coordinateString)[0])
+
+
+    console.log(result![0] * result![1])
 }
 
 const parseInput = (inputPath: string) => {
