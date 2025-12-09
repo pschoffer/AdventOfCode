@@ -74,3 +74,13 @@ export const calculateDistance = (a: number[], b: number[]) => {
 
     return distance;
 }
+
+export const calculatePerAxisDistance = (a: number[], b: number[]) => {
+    const result: number[] = [];
+
+    for (let ix = 0; ix < a.length; ix++) {
+        result.push(Math.abs(a[ix]! - b[ix]!))
+    }
+
+    return result;
+}
