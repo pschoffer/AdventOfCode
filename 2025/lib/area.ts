@@ -84,3 +84,21 @@ export const calculatePerAxisDistance = (a: number[], b: number[]) => {
 
     return result;
 }
+
+export const isInBounds = (test: number[], bounds: number[][]) => {
+    for (let axIx = 0; axIx < test.length; axIx++) {
+        const value = test[axIx]!
+
+        const axisBounds = bounds.map(boundCoord => boundCoord[axIx]) as number[]
+        const minBound = Math.min(...axisBounds)
+        const maxBound = Math.max(...axisBounds);
+
+        if (value < minBound || value > maxBound) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+export type Coord2D = [number, number];
