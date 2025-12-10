@@ -12,68 +12,112 @@ const run = async () => {
     let result = 0;
     let machineCount = 1;
     for (const machine of input) {
-        const initialLights: boolean[] = [];
-        const visitedPaths: Set<string> = new Set();
-        for (let ix = 0; ix < machine.ligthsCount; ix++) {
-            initialLights.push(false);
+        const initialJoltage = (machine.targetJoltage).map(item => 0);
+        const state: State = {
+            joltage: initialJoltage,
+            btnPressed: machine.buttons.map(btn => 0),
+            currentBtnIx: 0,
+            mode: 'incr',
         }
 
-        const paths: Path[] = [{ buttonPressed: [], count: 0, lights: initialLights }]
-        let winningPath: Path | null = null;
-        while (paths.length && !winningPath) {
-            const currentPath = paths.shift()!;
-            if (machine.targetKey === JSON.stringify(currentPath.lights)) {
-                winningPath = currentPath;
-                break;
+        while (machine.targetKey !== JSON.stringify(state.joltage)) {
+            if (state.mode === 'incr') {
+                const btn = machine.buttons[state.currentBtnIx]!
+                const canPress = Math.min(...btn.map(joltIx => machine.targetJoltage[joltIx]! - state.joltage[joltIx]!));
+                state.btnPressed[state.currentBtnIx]! += canPress
+                if (state.currentBtnIx < machine.buttons.length - 1) {
+                    state.currentBtnIx++;
+                } else {
+                    state.mode = 'dec';
+                }
+            } else {
+
+                if (state.btnPressed[state.currentBtnIx]! > 0) {
+                    let moveToNextOne = state.currentBtnIx === machine.buttons.length - 1;
+                    if (!moveToNextOne) {
+                        const neededIxs: number[] = []
+                        for (let jIx = 0; jIx < machine.targetJoltage.length; jIx++) {
+                            if (machine.targetJoltage[jIx]! - state.joltage[jIx]!) {
+                                neededIxs.push(jIx);
+                            }
+                        }
+                        const remainingBtnIxs = [...machine.buttons]
+                            .slice(state.currentBtnIx + 1)
+                            .reduce((prev, curr) => prev.concat(curr), [])
+                        moveToNextOne = neededIxs.some(neededIx => !remainingBtnIxs.includes(neededIx))
+                    }
+
+
+                    if (moveToNextOne) {
+                        state.btnPressed[state.currentBtnIx] = 0;
+                        state.currentBtnIx--;
+                    } else {
+                        state.btnPressed[state.currentBtnIx]!--
+                        state.currentBtnIx++;
+                        state.mode = 'incr'
+                    }
+                } else {
+                    state.currentBtnIx--;
+                }
             }
-            visitedPaths.add(makePathKey(currentPath));
 
-            for (let btnIx = 0; btnIx < machine.buttons.length; btnIx++) {
-                const button = machine.buttons[btnIx]!;
-                const newLights = [...currentPath.lights];
-                for (const lightIx of button) {
-                    newLights[lightIx] = !newLights[lightIx]
-                }
-
-                const buttonPressed = [...currentPath.buttonPressed].concat([btnIx]);
-                buttonPressed.sort((a, b) => a - b)
-                const newPath: Path = {
-                    buttonPressed,
-                    count: currentPath.count + 1,
-                    lights: newLights
-                }
-                if (!visitedPaths.has(makePathKey(newPath))) {
-                    paths.push(newPath);
+            const newJoltage = machine.targetJoltage.map(j => 0);
+            for (let btnIx = 0; btnIx < state.btnPressed.length; btnIx++) {
+                const count = state.btnPressed[btnIx];
+                if (count) {
+                    for (const jIx of machine.buttons[btnIx]!) {
+                        newJoltage[jIx]! += count;
+                    }
                 }
             }
-
+            state.joltage = newJoltage;
         }
 
-        if (winningPath) {
-            console.log(`[${machineCount++}/${input.length}] Winner`, JSON.stringify(winningPath));
-            result += winningPath.count;
-        }
+        const pressed = state.btnPressed.reduce((prev, curr) => prev + curr);
+        console.log(`[${machineCount++}/${input.length}] Won ${pressed}`)
+        result += pressed;
     }
 
 
     console.log('r', result);
 }
 
+
+
+interface State {
+    joltage: number[];
+    btnPressed: number[];
+    currentBtnIx: number;
+    mode: 'incr' | 'dec';
+}
+
+const minBtnRemaining = (current: number[], target: number[]) => {
+    let estimate = 0;
+    for (let ix = 0; ix < target.length; ix++) {
+        const diff = target[ix]! - current[ix]!
+        if (diff < 0) {
+            return -1;
+        }
+        estimate += diff;
+    }
+    return estimate;
+}
+
 const makePathKey = (path: Path) => {
-    return JSON.stringify(path.lights);
+    return JSON.stringify(path.joltage);
 }
 
 interface Path {
-    buttonPressed: number[];
+    // buttonPressed: number[];
     count: number;
-    lights: boolean[];
+    estimate: number;
+    joltage: number[];
 }
 
 interface Machine {
-    ligthsCount: number;
+    targetJoltage: number[]
     targetKey: string;
     buttons: number[][]
-    joltage: number[]
 }
 
 const parseInput = (inputPath: string) => {
@@ -86,13 +130,10 @@ const parseInput = (inputPath: string) => {
         const parts = line.split(' ');
 
         const lightsPart = parts.shift()!;
-        const joltage = parts.pop()!
+        const joltageString = parts.pop()!
+
+        const joltage = joltageString.replaceAll(/[\{\}]/g, '').split(',').map(Number);
         const buttons: number[][] = [];
-
-        const ligths = lightsPart.replaceAll(/[\[\]]/g, '')
-            .split('')
-            .map(char => char === '#');
-
 
         for (const part of parts) {
             const wiringString = part.replaceAll(/[\(\)]/g, '')
@@ -100,12 +141,13 @@ const parseInput = (inputPath: string) => {
             buttons.push(wirings)
         }
 
+        buttons.sort((a, b) => b.length - a.length)
+
 
         result.push({
-            ligthsCount: ligths.length,
-            targetKey: JSON.stringify(ligths),
+            targetKey: JSON.stringify(joltage),
             buttons,
-            joltage: [],
+            targetJoltage: joltage,
         });
     }
 
