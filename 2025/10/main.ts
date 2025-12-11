@@ -1,6 +1,5 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { explode, parseArea } from '../lib/area.js';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const inputPath = path.join(__dirname, 'input.txt');
@@ -52,10 +51,18 @@ const run = async () => {
             return neededJIxs.every(jIx => usableJIxs.includes(jIx));
         }
         let tries = 0;
+        const startTime = Date.now();
         while (machine.targetKey !== JSON.stringify(state.joltage)) {
             tries++;
-            if (!(tries % 1000000)) {
-                console.log(`Still around ${JSON.stringify(state.btnPressed)}, ${JSON.stringify(state.joltage)}`)
+            if (!(tries % 10000000)) {
+                const elapsed = Date.now() - startTime;
+                const seconds = Math.floor(elapsed / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                const remainingMinutes = minutes % 60;
+                const remainingSeconds = seconds % 60;
+                const timeStr = `${hours.toString().padStart(2, '0')}:${remainingMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+                console.log(`[${timeStr} - ${new Date().toTimeString()}] Still around ${JSON.stringify(state.btnPressed)}, ${JSON.stringify(state.joltage)}`)
             }
             if (state.mode === 'incr') {
                 const btn = machine.buttons[state.currentBtnIx]!
