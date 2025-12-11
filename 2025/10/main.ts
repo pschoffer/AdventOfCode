@@ -5,9 +5,10 @@ import { explode, parseArea } from '../lib/area.js';
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const inputPath = path.join(__dirname, 'input.txt');
 const inputTestPath = path.join(__dirname, 'test1.txt');
+const inputTestPath2 = path.join(__dirname, 'test2.txt');
 
 const run = async () => {
-    const input = parseInput(inputPath);
+    const input = parseInput(inputTestPath2);
 
     let result = 0;
     let machineCount = 1;
