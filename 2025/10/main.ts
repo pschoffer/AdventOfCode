@@ -8,7 +8,7 @@ const inputTestPath = path.join(__dirname, 'test1.txt');
 const inputTestPath2 = path.join(__dirname, 'test2.txt');
 
 const run = async () => {
-    const input = parseInput(inputTestPath2);
+    const input = parseInput(inputPath);
 
     let result = 0;
     let machineCount = 1;
@@ -51,8 +51,12 @@ const run = async () => {
                 .reduce((prev, curr) => prev.concat(curr), []))];
             return neededJIxs.every(jIx => usableJIxs.includes(jIx));
         }
-
+        let tries = 0;
         while (machine.targetKey !== JSON.stringify(state.joltage)) {
+            tries++;
+            if (!(tries % 1000000)) {
+                console.log(`Still around ${JSON.stringify(state.btnPressed)}, ${JSON.stringify(state.joltage)}`)
+            }
             if (state.mode === 'incr') {
                 const btn = machine.buttons[state.currentBtnIx]!
                 const canPress = Math.min(...btn.map(joltIx => machine.targetJoltage[joltIx]! - state.joltage[joltIx]!));
