@@ -6,164 +6,114 @@ const inputPath = path.join(__dirname, 'input.txt');
 const inputTestPath = path.join(__dirname, 'test1.txt');
 const inputTestPath2 = path.join(__dirname, 'test2.txt');
 
+
+const timeLog = (startTime: number, text: string) => {
+    const elapsed = Date.now() - startTime;
+    const seconds = Math.floor(elapsed / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    const remainingSeconds = seconds % 60;
+    const timeStr = `${hours.toString().padStart(2, '0')}:${remainingMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    console.log(`[${timeStr} - ${new Date().toTimeString()}] ${text}`)
+}
+
 const run = async () => {
     const input = parseInput(inputPath);
 
     let result = 0;
-    let machineCount = 1;
+    let machineCount = 0;
     for (const machine of input) {
-        const initialJoltage = (machine.targetJoltage).map(item => 0);
-        const state: State = {
-            joltage: initialJoltage,
-            btnPressed: machine.buttons.map(btn => 0),
-            currentBtnIx: 0,
-            mode: 'incr',
-        }
-
-        const updateJoltage = () => {
-            const newJoltage = machine.targetJoltage.map(j => 0);
-            for (let btnIx = 0; btnIx < state.btnPressed.length; btnIx++) {
-                const count = state.btnPressed[btnIx];
-                if (count) {
-                    for (const jIx of machine.buttons[btnIx]!) {
-                        newJoltage[jIx]! += count;
-                    }
-                }
-            }
-            state.joltage = newJoltage;
-        }
-
-        const canBeFilledWithRemaining = () => {
-            const remainingBtns = [...machine.buttons].splice(state.currentBtnIx + 1);
-            const neededJIxs: number[] = [];
-            const filledJIxs: number[] = [];
-            for (let jIx = 0; jIx < machine.targetJoltage.length; jIx++) {
-                if (machine.targetJoltage[jIx]! - state.joltage[jIx]!) {
-                    neededJIxs.push(jIx);
-                } else {
-                    filledJIxs.push(jIx);
-                }
-            }
-            const filteredBtns = remainingBtns
-                .filter(btn => btn.every(jIx => !filledJIxs.includes(jIx)))
-            const usableJIxs = [... new Set(filteredBtns
-                .reduce((prev, curr) => prev.concat(curr), []))];
-            return neededJIxs.every(jIx => usableJIxs.includes(jIx));
-        }
-        let tries = 0;
+        machineCount++;
         const startTime = Date.now();
-        while (machine.targetKey !== JSON.stringify(state.joltage)) {
-            tries++;
-            if (!(tries % 10000000)) {
-                const elapsed = Date.now() - startTime;
-                const seconds = Math.floor(elapsed / 1000);
-                const minutes = Math.floor(seconds / 60);
-                const hours = Math.floor(minutes / 60);
-                const remainingMinutes = minutes % 60;
-                const remainingSeconds = seconds % 60;
-                const timeStr = `${hours.toString().padStart(2, '0')}:${remainingMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-                console.log(`[${timeStr} - ${new Date().toTimeString()}] Still around ${JSON.stringify(state.btnPressed)}, ${JSON.stringify(state.joltage)}`)
+
+        const initJoltage = machine.targetJoltage.map(() => 0);
+
+        let attempt = 0;
+        const findNeededPresses = (btnIx: number, btnPresses: number[], btnPressedCount: number, joltage: number[]): number | null => {
+            attempt++;
+            if (attempt % 10000000 === 0) {
+                timeLog(startTime, `Testing, b: ${JSON.stringify(btnPresses)}`)
             }
-            if (state.mode === 'incr') {
-                const btn = machine.buttons[state.currentBtnIx]!
-                const canPress = Math.min(...btn.map(joltIx => machine.targetJoltage[joltIx]! - state.joltage[joltIx]!));
-                state.btnPressed[state.currentBtnIx]! += canPress
-                updateJoltage();
 
 
-                if (state.currentBtnIx < machine.buttons.length - 1) {
-                    const canBeFilled = canBeFilledWithRemaining();
-                    if (canBeFilled) {
-                        state.currentBtnIx++;
-                    } else {
-                        state.mode = 'dec';
+            if (JSON.stringify(joltage) === machine.targetKey) {
+                timeLog(startTime, `Found first result - ` + btnPressedCount)
+                return btnPressedCount
+            }
+            if (btnIx >= machine.buttons.length) {
+                return null;
+            }
+
+            const btn = machine.buttons[btnIx]!
+            const maxBtnPress = Math.min(...btn.map(jIx => machine.targetJoltage[jIx]! - joltage[jIx]!))
+            const newBtnPresses = [...btnPresses];
+            newBtnPresses[btnIx] = maxBtnPress;
+            const newJoltage = [...joltage];
+            for (const jIx of btn) {
+                newJoltage[jIx]! += maxBtnPress;
+            }
+
+            let bestPress: null | number = null;
+            do {
+                let rem = 0;
+                let neededIx: Set<number> = new Set();;
+                for (let jIx = 0; jIx < machine.targetJoltage.length; jIx++) {
+                    const diff = machine.targetJoltage[jIx]! - newJoltage[jIx]!;
+                    if (diff < 0) {
+                        return -1;
                     }
-                } else {
-                    state.mode = 'dec';
+                    if (diff > 0) {
+                        neededIx.add(jIx)
+                    }
+                    rem += diff
                 }
-            } else {
 
-                if (state.btnPressed[state.currentBtnIx]! > 0) {
-                    let lastItem = state.currentBtnIx === machine.buttons.length - 1;
-                    // if (!moveToNextOne) {
-                    //     const neededIxs: number[] = []
-                    //     for (let jIx = 0; jIx < machine.targetJoltage.length; jIx++) {
-                    //         if (machine.targetJoltage[jIx]! - state.joltage[jIx]!) {
-                    //             neededIxs.push(jIx);
-                    //         }
-                    //     }
-                    //     const remainingBtnIxs = [...machine.buttons]
-                    //         .slice(state.currentBtnIx + 1)
-                    //         .reduce((prev, curr) => prev.concat(curr), [])
-                    //     moveToNextOne = neededIxs.some(neededIx => !remainingBtnIxs.includes(neededIx))
-                    // }
+                const newBtnPressedCount = btnPressedCount + newBtnPresses[btnIx]
+                const avaibleBtns = machine.buttons.slice(btnIx + 1)
+                    .filter(btn => btn.every(jIx => neededIx.has(jIx)));
+                const bestCoverage = avaibleBtns[0]?.length || 1;
 
-
-                    if (lastItem) {
-                        state.btnPressed[state.currentBtnIx] = 0;
-                        state.currentBtnIx--;
-                        updateJoltage();
-                    } else {
-                        state.btnPressed[state.currentBtnIx]!--
-                        updateJoltage();
-
-
-                        if (canBeFilledWithRemaining()) {
-                            state.currentBtnIx++;
-                            state.mode = 'incr'
-                        } else {
-                            state.btnPressed[state.currentBtnIx] = 0;
-                            state.currentBtnIx--;
-                            updateJoltage();
+                if (rem > 0) {
+                    if (btnIx === (machine.buttons.length - 1)) {
+                        break;
+                    }
+                    if (newBtnPresses[btnIx] !== maxBtnPress) {
+                        const possibleIx = avaibleBtns.reduce((prev, curr) => prev.concat(curr), []);
+                        const allCovered = [...neededIx].every(jIx => possibleIx.includes(jIx));
+                        if (!allCovered) {
+                            break;
                         }
                     }
-                } else {
-                    state.currentBtnIx--;
                 }
-            }
 
+
+                const bestCase = Math.ceil(rem / bestCoverage)
+                if (!bestPress || newBtnPressedCount + bestCase < bestPress) {
+                    let nextBtnResult = findNeededPresses(btnIx + 1, newBtnPresses, newBtnPressedCount, newJoltage);
+                    if (nextBtnResult != null && (!bestPress || bestPress > nextBtnResult)) {
+                        bestPress = nextBtnResult;
+                    }
+                }
+                newBtnPresses[btnIx]--;
+                for (const jIx of btn) {
+                    newJoltage[jIx]! --;
+                }
+            } while (newBtnPresses[btnIx] >= 0)
+
+            return bestPress;
         }
 
-        const pressed = state.btnPressed.reduce((prev, curr) => prev + curr);
-        console.log(`[${machineCount++}/${input.length}] Won ${pressed}`)
-        result += pressed;
+        const machineResult = findNeededPresses(0, machine.buttons.map(() => 0), 0, initJoltage)
+
+        timeLog(startTime, `[${machineCount}/${input.length}] - best ${machineResult}`)
+        result += machineResult || 0;
     }
 
 
     console.log('r', result);
 }
 
-
-
-interface State {
-    joltage: number[];
-    btnPressed: number[];
-    currentBtnIx: number;
-    mode: 'incr' | 'dec';
-}
-
-const minBtnRemaining = (current: number[], target: number[]) => {
-    let estimate = 0;
-    for (let ix = 0; ix < target.length; ix++) {
-        const diff = target[ix]! - current[ix]!
-        if (diff < 0) {
-            return -1;
-        }
-        estimate += diff;
-    }
-    return estimate;
-}
-
-const makePathKey = (path: Path) => {
-    return JSON.stringify(path.joltage);
-}
-
-interface Path {
-    // buttonPressed: number[];
-    count: number;
-    estimate: number;
-    joltage: number[];
-}
 
 interface Machine {
     targetJoltage: number[]
@@ -206,3 +156,4 @@ const parseInput = (inputPath: string) => {
 }
 
 run();
+
