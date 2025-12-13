@@ -30,6 +30,7 @@ const run = async () => {
         const initJoltage = machine.targetJoltage.map(() => 0);
 
         let attempt = 0;
+        let bestPress: null | number = null;
         const findNeededPresses = (btnIx: number, btnPresses: number[], btnPressedCount: number, joltage: number[]): number | null => {
             attempt++;
             if (attempt % 10000000 === 0) {
@@ -54,7 +55,6 @@ const run = async () => {
                 newJoltage[jIx]! += maxBtnPress;
             }
 
-            let bestPress: null | number = null;
             do {
                 let rem = 0;
                 let neededIx: Set<number> = new Set();;
